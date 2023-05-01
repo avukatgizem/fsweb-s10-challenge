@@ -1,17 +1,38 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { nanoid } from "nanoid";
 import { useHistory } from "react-router";
 import Gratitude from "./../assets/grForm.png";
+import { useDispatch, useSelector } from "react-redux";
+import { getNotesFromLocalStorage, notEkleAPI, yuklendi } from "../actions";
+
+import { notify } from "../notify";
 
 export default function PostForm() {
+  const loading = useSelector((store) => store.loading);
+  const success = useSelector((store) => store.success);
+  const history = useHistory();
+  const dispatch = useDispatch();
+  //localStorage.clear();
+  console.log("success:", success);
+
+  useEffect(() => {
+    dispatch(getNotesFromLocalStorage());
+  }, []);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({ mode: "onChange" });
 
-  const history = useHistory();
+  useEffect(() => {
+    if (success === true) {
+      history.push("/notlar");
+      notify("Not eklendi!");
+      dispatch(yuklendi());
+    }
+  }, [success, history]);
 
   function onSubmit(data) {
     const yeniNot = {
@@ -21,6 +42,9 @@ export default function PostForm() {
         .filter((v) => v !== "")
         .join("|"),
     };
+    console.log(yeniNot);
+
+    dispatch(notEkleAPI(yeniNot));
 
     // burada ilgili eylemi dispatch edin
     // toast mesajı gösterin
@@ -36,7 +60,6 @@ export default function PostForm() {
         <img src={Gratitude} alt="" className="block object-cover h-full" />
       </div>
 
-
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col gap-3 p-8 flex-1"
@@ -48,8 +71,8 @@ export default function PostForm() {
           yansıtmalara kadar pek çok şeyden oluşabilir.
         </p>
         <p className="text-stone-700 my-3 text-xs">
-          Her gün belli saatlerde 3 maddeden oluşan bir liste
-          yapmak, bu alışkanlığa iyi bir başlangıç noktası sayılır.
+          Her gün belli saatlerde 3 maddeden oluşan bir liste yapmak, bu
+          alışkanlığa iyi bir başlangıç noktası sayılır.
         </p>
         <div>
           <input
@@ -76,12 +99,16 @@ export default function PostForm() {
           />
         </div>
 
-        <button
-          type="submit"
-          className="myButton"
-        >
-          Ekle
-        </button>
+        <div className="flex justify-between">
+          <button
+            disabled={loading}
+            type="submit"
+            className="myButton disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Ekle
+          </button>
+          {loading && <h2> Not Ekleniyor...</h2>}
+        </div>
       </form>
     </div>
   );
